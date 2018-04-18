@@ -1,0 +1,26 @@
+Signal     Value     Action   Comment    
+-------------------------------------------------------------------------    
+SIGHUP        1       Term    Hangup detected on controlling terminal    
+                              or death of controlling process    
+SIGINT        2       Term    Interrupt from keyboard    
+SIGQUIT       3       Core    Quit from keyboard    
+SIGILL        4       Core    Illegal Instruction    
+SIGABRT       6       Core    Abort signal from abort(3)    
+SIGFPE        8       Core    Floating point exception    
+SIGKILL       9       Term    Kill signal    
+SIGSEGV      11       Core    Invalid memory reference    
+SIGPIPE      13       Term    Broken pipe: write to pipe with no readers    
+SIGALRM      14       Term    Timer signal from alarm(2)    
+SIGTERM      15       Term    Termination signal    
+SIGUSR1   30,10,16    Term    User-defined signal 1    
+SIGUSR2   31,12,17    Term    User-defined signal 2    
+SIGCHLD   20,17,18    Ign     Child stopped or terminated    
+SIGCONT   19,18,25            Continue if stopped    
+SIGSTOP   17,19,23    Stop    Stop process    
+SIGTSTP   18,20,24    Stop    Stop typed at tty    
+SIGTTIN   21,21,26    Stop    tty input for background process    
+SIGTTOU   22,22,27    Stop    tty output for background process    
+
+
+SIGKILL(9)  应用程序无法感知9号信号,而SIGTERM/SIGQUIT可以;SIGKILL信号是直接发给init进程的，它收到该信号后，负责终止pid指定的进程
+SIGSTOP		停止(stopped)进程的执行. 注意它和terminate以及interrupt的区别:该进程还未结束, 只是暂停执行. 本信号不能被阻塞, 处理或忽略.

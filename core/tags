@@ -1,0 +1,73 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+CSTR1	./include/common.h	29;"	d
+H	./libcommon.a	20;"	v
+H	./output/libcommon.a	20;"	v
+H	./test_utls.o	1;"	v
+LIBQ_RANDOM_H	./random.h	2;"	d
+LOG_ERR	./include/log.h	23;"	e	enum:quasar::__anon1
+LOG_FM_PREFIX_SAMPLE	./include/log.h	13;"	d
+LOG_FM_PREFIX_SIZE	./include/log.h	14;"	d
+LOG_INF	./include/log.h	21;"	e	enum:quasar::__anon1
+LOG_WRN	./include/log.h	22;"	e	enum:quasar::__anon1
+NULLSTR	./include/common.h	18;"	d
+QLog	./include/log.h	77;"	c	namespace:quasar
+RESLV_MILISEC	./include/common.h	22;"	d
+RESLV_USEC	./include/common.h	21;"	d
+RUN_FLAG	./include/common.h	34;"	d
+Run	./test_utls.cc	8;"	f	class:quasar::RunTest
+RunTest	./include/test_utls.h	14;"	c	namespace:quasar
+TBUFSIZE	./include/common.h	17;"	d
+TYPE_CHECK	./include/common.h	24;"	d
+TestFunc	./include/test_utls.h	8;"	t	namespace:quasar
+TestObject	./include/test_utls.h	12;"	f	struct:quasar::TestObject
+TestObject	./include/test_utls.h	9;"	s	namespace:quasar
+_l_src_chs	./random.h	9;"	v
+_libq_length	./random.h	11;"	d
+_now_timespec	./include/common.h	38;"	f	namespace:quasar
+add_test	./test_utls.cc	5;"	f	class:quasar::RunTest
+check_cpp_version	./common.cc	5;"	f	namespace:quasar
+first_msg	./include/log.h	81;"	m	class:quasar::QLog
+fm_prefix	./include/log.h	29;"	f	namespace:quasar
+fm_prefix	./include/log.h	36;"	f	namespace:quasar
+fm_prefix_length	./include/log.h	26;"	f	namespace:quasar
+format	./tags	1;"	v
+fp	./include/test_utls.h	10;"	m	struct:quasar::TestObject
+g_fm_lvl	./include/log.h	15;"	m	namespace:quasar
+init	./random.h	12;"	f
+main	./test/tmp/temp.cc	7;"	f
+main	./test/tst-log.cc	14;"	f
+main	./test/tst-pthread1.cc	20;"	f
+name	./include/test_utls.h	11;"	m	struct:quasar::TestObject
+now_in_milisec	./include/common.h	65;"	f	namespace:quasar
+now_in_string	./include/common.h	69;"	f	namespace:quasar
+now_in_usec	./include/common.h	61;"	f	namespace:quasar
+quasar	./ThreadBase.h	6;"	n
+quasar	./ThreadBase_pthread.h	3;"	n
+quasar	./common.cc	4;"	n	file:
+quasar	./include/common.h	11;"	n
+quasar	./include/log.h	10;"	n
+quasar	./include/test_utls.h	6;"	n
+quasar	./test_utls.cc	4;"	n	file:
+quasar_COMMON_H	./include/common.h	2;"	d
+quasar_LINKLIST_H	./linklist.h	3;"	d
+quasar_LOG_H	./include/log.h	2;"	d
+quasar_TEST_UTILS_H	./include/test_utls.h	2;"	d
+randomstring	./random.h	21;"	f
+sLog	./include/log.h	44;"	f	namespace:quasar
+sLog	./include/log.h	55;"	f	namespace:quasar
+sLog	./include/log.h	66;"	f	namespace:quasar
+seed	./random.h	8;"	v
+simple_routine	./test/tst-pthread1.cc	4;"	f
+titr	./include/test_utls.h	19;"	t	class:quasar::RunTest
+tobjs	./include/test_utls.h	20;"	m	class:quasar::RunTest
+tst0_threadroutinetype	./test/tst-pthread1.cc	8;"	f
+tst_log_01	./test/tst-log.cc	8;"	f
+u16	./include/common.h	13;"	t	namespace:quasar
+u32	./include/common.h	14;"	t	namespace:quasar
+u64	./include/common.h	15;"	t	namespace:quasar
+u8	./include/common.h	12;"	t	namespace:quasar

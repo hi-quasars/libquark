@@ -1,0 +1,14 @@
+pthread: 
+    pthread_mutex
+    pthread_cond
+    pthread_spinlock
+    pthread_yield
+
+socket:
+    linux network TCP
+
+pipe2:
+    linux pipe
+    use socket-based impl pipe
+
+
