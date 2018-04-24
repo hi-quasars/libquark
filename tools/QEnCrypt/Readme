@@ -1,0 +1,8 @@
+ ## About
+  
+ this tool is used by me for easy text encryption & decrption which based on `jonasschnelli/chacha20poly1305`(a submodule of this repo)
+
+ the code in this folder is just a wrapper-around. 
+ core ultilities're impl-ed by `jonasschnelli/chacha20poly1305`.
+
+
