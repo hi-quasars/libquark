@@ -21,6 +21,41 @@ const size_t QEBlockSize = 512;
 const size_t QEKeySize = 32;
 const uchar_t *QEKeys = (uchar_t*)"879b976f9e1d328865559a771b982120";
 
+template<typename UNIT，const size_t SZ>
+class Block {
+public:
+    Block() {}
+    ~Block() {}
+    int Init(UNIT *src, size_t sz){
+        if (sz > SZ) {
+            return -1;
+        }
+        for (size_t i = 0; i < sz; i++){
+            ctn[i] = src[i];
+        }
+        size = sz;
+        return 0;
+    }
+    
+    void* CtnPtr() {
+        return (void*)ctn;
+    }
+
+    void SetCtnSize(size_t sz) {
+        size = sz;
+    }
+    size_t CtnSize() {
+        return size;
+    }
+
+private:
+    size_t size;
+    UNIT ctn[SZ];
+};
+
+class BlockArena {
+
+};
 
 class QEncryObject {
 public:
