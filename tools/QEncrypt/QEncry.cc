@@ -1,8 +1,8 @@
 
 /* *********************
  *  a block-based encryption library
- *
- * */
+ *  
+ */
 
 #include <iostream>
 #include <cstring>

@@ -12,7 +12,7 @@ int test_01()
     while(1){
         ret = qo.ReadBlock(buffer);
         printf("ret: %d\n----------------\n%s\n", ret, buffer);
-        if (ret != Quark::QEncryObject::rOK){
+        if (ret != Quark::rOK){
             break;
         }
     }
