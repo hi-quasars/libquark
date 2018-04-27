@@ -14,11 +14,27 @@
 
 namespace Quark {
 
+/*
+ *  Encryption:
+ *   plaintext           File      ------------------> Mem(Object)
+ *   ```
+ *    field_0=abcd1         |----> 
+ *    field_1=abcd2
+ *    field_2=abcd2
+ *    ...
+ *   ```
+ *
+ *  fp -----> Block ----> EncryptObject::Decrypt ----> Block
+ *
+ *
+ *
+ *
+ */
+
+
+
 typedef uint8_t uchar_t;
 
-const size_t QEBlockSize = 512;
-const size_t QEKeySize = 32;
-const uchar_t *QEKeys = (uchar_t *)"879b976f9e1d328865559a771b982120";
 enum {
   rOK = 0,
   rEOF,
@@ -27,14 +43,23 @@ enum {
 };
 
 class BlockArena;
+class QuarkAppendFile;
+
+class BlockBase {
+};
+
 
 template <typename UNIT = uchar_t, const size_t SZ = QEBlockSize>
-class Block {
+class Block : public BlockBase {
   friend class BlockArena;
+  friend class QuarkAppendFile;
  public:
   Block() : vl_sz(0), ctnptr(ctn) {  }
   ~Block() {}
   
+  Block(UNIT* u, size_t len) : vl_sz(len), ctnptr(u){
+  }
+
   static int File2Block(FILE *, Block *, size_t); 
   static int Block2File(FILE *, Block *);
  private:
@@ -80,8 +105,9 @@ int Block<UNIT, SZ>::Block2File(FILE *fp, Block *b) {
 
 // mem <--> Block
 template <>
-class Block <void, 1> {
+class Block <void, 1> : public BlockBase {
   friend class BlockArena; 
+  friend class QuarkAppendFile;
 public:
   Block(void* ctnptr_, size_t sz_) 
       : ctnptr(ctnptr_), cap(sz_)
@@ -127,69 +153,85 @@ int Block <void, 1>::Block2File(FILE *fp, Block *b) {
 }
 
 
-
 class BlockArena {
 public:
-
-
+  
 };
 
-class QEncryObject {
- public:
-  QEncryObject(const char *filename);
-  ~QEncryObject();
+typedef Blocks<void, 1> ByteBlock;
+typedef vector<ByteBlock *> ByteBlockArray;
 
-  int ReadBlock(void *buf);               // Read a block and decrypt
-  int WriteBlock(void *buf, size_t len);  // encript and write a line
 
-  void QkEncript(uchar_t *from, size_t len);
-  void QkDecript(uchar_t *from, size_t len);
-#ifdef DEBUG
-  void PrintUchar(uchar_t *ptr, size_t len);
-#endif
-  uchar_t *InternalBuffer(int type) {
-    if (0 == type) {
-      return read_buffer;
-    } else if (1 == type) {
-      return write_buffer;
-    } else if (2 == type) {
-      return encrypt_buffer;
+const size_t QEBlockSize = 512;
+const size_t QEKeySize = 32;
+const uchar_t *QEKeys = (uchar_t *)"879b976f9e1d328865559a771b982120";
+const char *QFMagic = "95fb52146c042eeccb65094f92b306a0"; // output of `echo "quark-fs" | md5sum`
+
+/*
+ * a QuarkFile ---> PlainFile
+ *  | Block0 | Block1 | ... | Blockn | Footer |
+ *
+ */
+class QuarkAppendFile {
+public:
+    /*
+     * Read-Append file (from an existing quark-file)
+     * failed if file not-exited or not valid format.
+     */
+    static QuarkAppendFile* NewReadFile(const char*);   
+    
+    /*
+     * Write-Append file (to a non-exist file in quark-file format);
+     * failed if file already exist.
+     */
+    static QuarkAppendFile* NewWriteFile(const char*);
+    static QuarkAppendFile* ImportFromPlainFile(const char*, int rw);
+    
+
+
+    QuarkAppendFile(const char* fname_) : fname(fname_), fp(NULL) { }
+    ~QuarkAppendFile() { 
+      if(fp){
+        fclose(fp);
+      }
     }
-  }
-  size_t InternalBSize(int type) {
-    if (0 == type) {
-      return rb_sz;
-    } else if (1 == type) {
-      return wb_sz;
-    } else if (2 == type) {
-      return eb_sz;
-    }
-  }
 
- private:
-  int internal_read_rbuffer();
-  int internal_write_wbuffer();
-  void internal_encript(uchar_t *from, size_t len, int en_or_de);
-  // int internal_read_file(uchar_t* buf, size_t sz);
+    int Read1Block();        // fp ---> a block ---> blk_memtable
+    int Write1Block();       // blk_memtable --> a block --> fp
+private:
+    enum ModeBit{
+      BITRW = 0
+    };
+    struct QFMetaBlock {                 // QuarkFile Metadata Block
+        uint32_t blksize;
+        uint64_t blkcount;
+        char magic[32];
 
-  // encription materials
-  struct chachapolyaead_ctx encr_adea_ctx;
-  const uchar_t *encr_key;
-  size_t encr_key_len;
+        QFMeta(size_t bs, size_t bc) 
+            : blksize(bs), blkcount(bc){ 
+            
+            }
+        ~QFMeta() {}
+    } meta;
 
-  // other meta
-  int state;
-  size_t rb_sz;
-  uchar_t read_buffer[QEBlockSize];
-
-  size_t wb_sz;
-  uchar_t write_buffer[QEBlockSize];
-
-  size_t eb_sz;
-  uchar_t encrypt_buffer[QEBlockSize];
-
-  FILE *fp;
+    
+    FILE*           fp;
+    std::string     fname;
+    int             mode;
+    
+    ByteBlockArray  blk_memtable;
 };
+
+/*
+ * 
+ */
+class QEncryption{
+public:
+  int EncryptAndPut(const std::string &src) {}
+  int DecryptAndGet(std::string &dst) {}
+};
+
+
 
 }  // namespace Quark
 #endif
