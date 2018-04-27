@@ -5,10 +5,9 @@
 #include <cstdio>
 #include <stdint.h>
 
-// 3rdparty
-#include "chacha20poly1305/chacha.h"
-#include "chacha20poly1305/chachapoly_aead.h"
-#include "chacha20poly1305/poly1305.h"
+// TODO - replace vector 
+#include <vector>
+
 
 #define DEBUG
 
@@ -31,9 +30,13 @@ namespace Quark {
  *
  */
 
-
-
 typedef uint8_t uchar_t;
+
+const size_t QEBlockSize = 512;
+const size_t QEKeySize = 32;
+const uchar_t *QEKeys = (uchar_t *)"879b976f9e1d328865559a771b982120";
+const char *QFMagic = "95fb52146c042eeccb65094f92b306a0"; // output of `echo "quark-fs" | md5sum`
+
 
 enum {
   rOK = 0,
@@ -158,14 +161,9 @@ public:
   
 };
 
-typedef Blocks<void, 1> ByteBlock;
+typedef Block<void, 1> ByteBlock;
 typedef vector<ByteBlock *> ByteBlockArray;
 
-
-const size_t QEBlockSize = 512;
-const size_t QEKeySize = 32;
-const uchar_t *QEKeys = (uchar_t *)"879b976f9e1d328865559a771b982120";
-const char *QFMagic = "95fb52146c042eeccb65094f92b306a0"; // output of `echo "quark-fs" | md5sum`
 
 /*
  * a QuarkFile ---> PlainFile
