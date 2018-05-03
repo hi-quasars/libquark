@@ -99,21 +99,37 @@ QuarkAppendFile::QFMetaBlock* QuarkAppendFile::QFMetaBlock::ReadFromFile(FILE* f
   struct QFMetaBlock* qb = new QFMetaBlock(0, 0, "");
   // locate
   long int ft_now = ftell(fp1);
+  long int ft_footer;
+  if(ft_now < 0) {
+    //std::cout << "ft1:" << ft_now << std::endl;
+    goto ERR;
+  }
   fseek(fp1, 0, SEEK_END);
-  long int ft_footer = ftell(fp1) - QAF_Footer_Size;
+  //std::cout << "ft2:" << ftell(fp1) << std::endl;
+  ft_footer = ftell(fp1) - QAF_Footer_Size;
   fseek(fp1, ft_footer, SEEK_SET);
+  //std::cout << "ft3:" << ftell(fp1) << std::endl;
   
-  ret = BSBLK::File2Block(fp1, &blksize);
-  if (ret != rOK) goto ERR;
 
-  ret = BCBLK::File2Block(fp1, &blkcount);
-  if (ret != rOK) goto ERR;
+  ret = BSBLK::File2Block(fp1, &(qb->blksize));
+  if (ret != rOK){
+      std::cerr << "BSBLK failed:" << ret << std::endl;
+      goto ERR;
+  }
 
-  ret = MGBLK::File2Block(fp1, &magic);
-  if (ret != rOK && ret != rEOF) goto ERR;
+  ret = BCBLK::File2Block(fp1, &(qb->blkcount));
+  if (ret != rOK) { 
+      std::cerr << "BCBLK failed:" << ret << std::endl;
+      goto ERR;
+  }
+
+  ret = MGBLK::File2Block(fp1, &(qb->magic));
+  if (ret != rOK && ret != rEOF) { 
+      std::cerr << "MGBLK failed:" << ret << std::endl;
+      goto ERR;
+  }
 
   fseek(fp1, ft_now, SEEK_SET);
-
   return qb;
 ERR:
   delete qb;

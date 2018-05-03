@@ -44,16 +44,23 @@ enum {
 
 class BlockArena;
 class QuarkAppendFile;
+class QAF_Test_Obj;
 
 class BlockBase {};
 
+/*
+ * UNIT must be the scalar-type.
+ * */
 template <typename UNIT = uchar_t, const size_t SZ = QEBlockSize>
 class Block : public BlockBase {
   friend class BlockArena;
   friend class QuarkAppendFile;
+  friend class QAF_Test_Obj;
 
  public:
-  Block() : vl_sz(0), ctnptr(ctn) {}
+  Block() : vl_sz(0), ctnptr(ctn) {
+    memset(ctn, 0, SZ); //zero
+  }
   ~Block() {}
 
   Block(UNIT *u, size_t len) : vl_sz(len), ctnptr(u) {}
@@ -63,18 +70,22 @@ class Block : public BlockBase {
   static int Block2File(FILE *, Block *);
   UNIT GetCtn0() { return ctnptr[0]; }
   UNIT GetCtn(int x) { return ctnptr[x]; }
-  UNIT* GetCtnX() {return ctnptr; }
-  void SetCtn0(UNIT x) { ctn[0] = x; vl_sz = vl_sz == 0 ? 1 : vl_sz;}
-  void SetCtn(const UNIT *xptr, size_t len) { 
+  UNIT *GetCtnX() { return ctnptr; }
+  void SetCtn0(UNIT x) {
+    ctn[0] = x;
+    vl_sz = vl_sz == 0 ? 1 : vl_sz;
+  }
+  void SetCtn(const UNIT *xptr, size_t len) {
     for (size_t i = 0; i < len && i < SZ; i++) {
       ctn[i] = xptr[i];
     }
     vl_sz = len <= SZ ? len : SZ;
   }
-  bool operator== (const Block<UNIT, SZ> &b) {
-    if( this->vl_sz == b.vl_sz && 
-        0 == memcmp(this->ctnptr, b.ctnptr, this->vl_sz) )
-        return true;
+  void SetVlSZ(size_t x) { vl_sz = x; }
+  bool operator==(const Block<UNIT, SZ> &b) {
+    if (this->vl_sz == b.vl_sz &&
+        0 == memcmp(this->ctnptr, b.ctnptr, this->vl_sz))
+      return true;
     return false;
   }
 
@@ -98,8 +109,9 @@ int Block<UNIT, SZ>::File2Block(FILE *fp, Block *b, size_t bc) {
     } else if (feof(fp)) {
       b->vl_sz = sz;
       ret = rEOF;
+    } else {
+      ret = rERR;
     }
-    ret = rERR;
   }
   return ret;
 }
@@ -107,16 +119,19 @@ int Block<UNIT, SZ>::File2Block(FILE *fp, Block *b, size_t bc) {
 template <typename UNIT, const size_t SZ>
 int Block<UNIT, SZ>::File2Block(FILE *fp, Block *b) {
   int ret = rENVAL;
-  if (fp && b ) {
+  if (fp && b) {
+    // std::cout << "SZ:" << SZ << std::endl;
     size_t sz = fread((void *)b->ctnptr, sizeof(UNIT), SZ, fp);
+    // std::cout << "sz:" << sz << std::endl;
     if (sz == SZ) {
       b->vl_sz = SZ;
       ret = rOK;
     } else if (feof(fp)) {
       b->vl_sz = sz;
       ret = rEOF;
+    } else {
+      ret = rERR;
     }
-    ret = rERR;
   }
   return ret;
 }
@@ -138,6 +153,7 @@ int Block<UNIT, SZ>::Block2File(FILE *fp, Block *b) {
 
 // mem <--> Block
 // Block don't maintain the area.
+// zero-copy block
 template <>
 class Block<void, 1> : public BlockBase {
   friend class BlockArena;
@@ -146,10 +162,12 @@ class Block<void, 1> : public BlockBase {
  public:
   Block(void *ctnptr_, size_t sz_) : ctnptr(ctnptr_), cap(sz_) {}
   ~Block() {}
-  void SetValidSize(size_t sz_) { vl_sz = sz_; }
+  void SetVlSZ(size_t sz_) { vl_sz = sz_; }
   static int File2Block(FILE *, Block *, size_t);
+  static int File2Block(FILE *, Block *);
   static int Block2File(FILE *, Block *);
-
+  size_t GetVlSZ() { return vl_sz;}
+  size_t GetCap() { return cap; }
  private:
   size_t vl_sz;
   size_t cap;
@@ -166,8 +184,26 @@ int Block<void, 1>::File2Block(FILE *fp, Block *b, size_t sz) {
     } else if (feof(fp)) {
       b->vl_sz = sz;
       ret = rEOF;
+    } else {
+      ret = rERR;
     }
-    ret = rERR;
+  }
+  return ret;
+}
+
+int Block<void, 1>::File2Block(FILE *fp, Block *b) {
+  int ret = rENVAL;
+  if (fp && b) {
+    size_t rsz = fread(b->ctnptr, 1, b->cap, fp);
+    if (rsz == b->cap) {
+      b->vl_sz = b->cap;
+      ret = rOK;
+    } else if (feof(fp)) {
+      b->vl_sz = rsz;
+      ret = rEOF;
+    } else {
+      ret = rERR;
+    }
   }
   return ret;
 }
@@ -175,8 +211,8 @@ int Block<void, 1>::File2Block(FILE *fp, Block *b, size_t sz) {
 int Block<void, 1>::Block2File(FILE *fp, Block *b) {
   int ret = rERR;
   if (fp && b) {
-    size_t sz = fwrite(b->ctnptr, 1, b->vl_sz, fp);
-    if (sz == b->vl_sz) {
+    size_t sz = fwrite(b->ctnptr, 1, b->cap, fp);
+    if (sz == b->cap) {
       ret = rOK;
     }
   }
@@ -202,7 +238,6 @@ const char *QAF_Mode_Strs[] = {"w", "r+", "a"};
  *  | Block0 | Block1 | ... | Blockn | Footer |
  *
  */
-class QAF_Test_Obj;
 class QuarkAppendFile {
  public:
   friend class QAF_Test_Obj;
@@ -240,7 +275,8 @@ class QuarkAppendFile {
   struct QFMetaBlock {  // QuarkFile Metadata Block
     typedef Block<uint32_t, 1> BSBLK;
     typedef Block<uint64_t, 1> BCBLK;
-    typedef Block<char, QAF_Footer_Size - sizeof(uint32_t) - sizeof(uint64_t)> MGBLK;
+    typedef Block<char, QAF_Footer_Size - sizeof(uint32_t) - sizeof(uint64_t)>
+        MGBLK;
 
     Block<uint32_t, 1> blksize;
     Block<uint64_t, 1> blkcount;
@@ -250,6 +286,8 @@ class QuarkAppendFile {
       blksize.SetCtn0(bs);
       blkcount.SetCtn0(bc);
       magic.SetCtn(m, strlen(m));
+
+      magic.SetVlSZ(QAF_Footer_Size - sizeof(uint32_t) - sizeof(uint64_t));
     }
     ~QFMetaBlock() {}
 
