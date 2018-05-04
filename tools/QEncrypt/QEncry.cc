@@ -71,7 +71,6 @@ int QuarkAppendFile::WriteAllBlocks() {
   int ret;
   for (ByteBlockArray::iterator itr = blk_memtable.begin();
        itr != blk_memtable.end(); ++itr) {
-    std::cout << "w1" << std::endl;
     ret = ByteBlock::Block2File(fp, *itr);
     if (ret != rOK) {
       return ret;

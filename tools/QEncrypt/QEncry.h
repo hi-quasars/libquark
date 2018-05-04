@@ -169,6 +169,7 @@ class Block<void, 1> : public BlockBase {
   static int Block2File(FILE *, Block *);
   size_t GetVlSZ() { return vl_sz;}
   size_t GetCap() { return cap; }
+  void * GetCtn() { return ctnptr; }
  private:
   size_t vl_sz;
   size_t cap;
