@@ -114,7 +114,6 @@ TEST(BlockIO, void_block_01) {
   EXPECT_EQ(0, strcmp(buf, buf2));
 }
 
-
 namespace Quark {
 /* tests for QFMetaBlock */
 class QAF_Test_Obj {
@@ -122,17 +121,17 @@ class QAF_Test_Obj {
   static void tst_QFMetaBlock_mem_init() {
     std::string str1 = dirname + "QFmetablock_0" + suffix;
     QuarkAppendFile *f1x = QuarkAppendFile::NewEmptyAppendFile(str1.c_str());
-    std::cout << "meta magic: " << f1x->meta.magic.GetCtnX() << std::endl;
-    std::cout << "bs:" << f1x->meta.blksize.GetCtn(0) << std::endl;
-    std::cout << "bc:" << f1x->meta.blkcount.GetCtn(0) << std::endl;
+    std::cout << "meta magic: " << f1x->meta.magic << std::endl;
+    std::cout << "bs:" << f1x->meta.blksize << std::endl;
+    std::cout << "bc:" << f1x->meta.blkcount << std::endl;
     delete f1x;
   }
   static void tst_QFMetaBlock_IO() {
     std::string str1 = dirname + "QFmetablock_1" + suffix;
     QuarkAppendFile *f1x = QuarkAppendFile::NewEmptyAppendFile(str1.c_str());
-    std::cout << "meta magic: " << f1x->meta.magic.GetCtnX() << std::endl;
-    std::cout << "bs:" << f1x->meta.blksize.GetCtn(0) << std::endl;
-    std::cout << "bc:" << f1x->meta.blkcount.GetCtn(0) << std::endl;
+    std::cout << "meta magic: " << f1x->meta.magic << std::endl;
+    std::cout << "bs:" << f1x->meta.blksize << std::endl;
+    std::cout << "bc:" << f1x->meta.blkcount << std::endl;
     // std::cout << "info: " << f1x->meta.magic.vl_sz << "," << QAF_Footer_Size
     // - sizeof(uint32_t) - sizeof(uint64_t) << std::endl;
     int ret = f1x->meta.WriteToFile(f1x->fp);
@@ -144,17 +143,68 @@ class QAF_Test_Obj {
     QuarkAppendFile::QFMetaBlock *qm = f2x->meta.ReadFromFile(f2x->fp);
     EXPECT_NE(qm, (void *)NULL);
     std::cout << "-------------read from file---------------" << std::endl;
-    std::cout << "meta magic: " << qm->magic.GetCtnX() << std::endl;
-    std::cout << "bs:" << qm->blksize.GetCtn(0) << std::endl;
-    std::cout << "bc:" << qm->blkcount.GetCtn(0) << std::endl;
+    std::cout << "meta magic: " << qm->magic << std::endl;
+    std::cout << "bs:" << qm->blksize << std::endl;
+    std::cout << "bc:" << qm->blkcount << std::endl;
     delete f2x;
     delete qm;
   }
+  static void tst_QAF_01() {
+    std::string str1 = dirname + "QAF_01" + suffix;
+    
+    QuarkAppendFile *f1x = QuarkAppendFile::NewEmptyAppendFile(str1.c_str());
+    std::cout << "meta magic: " << f1x->meta.magic << std::endl;
+    std::cout << "bs:" << f1x->meta.blksize << std::endl;
+    std::cout << "bc:" << f1x->meta.blkcount << std::endl;
+    // std::cout << "info: " << f1x->meta.magic.vl_sz << "," << QAF_Footer_Size
+    // - sizeof(uint32_t) - sizeof(uint64_t) << std::endl;
+    int ret = f1x->meta.WriteToFile(f1x->fp);
+    // std::cout << ret << std::endl;
+    delete f1x;
+
+    QuarkAppendFile *f2x =
+        QuarkAppendFile::NewNonEmptyReadFile(str1.c_str(), false);
+    
+    QuarkAppendFile *chk = f2x->check(false);
+    EXPECT_EQ(chk, f2x);
+
+    delete f2x;
+  }
+  static void tst_File_01() {
+    int ret;
+    std::string str1 = dirname + "file_01" + suffix;
+    Quark::QuarkAppendFile::initialize();
+    Quark::QuarkAppendFile *fx = Quark::QuarkAppendFile::NewEmptyAppendFile(str1.c_str());
+    char* opbuf1 = (char*)fx->AllocBlockBuffer();
+    size_t sz = fx->GetBlockBufferSize();
+    char x = 'A';
+    for(size_t i = 0; i < sz && i < 10; i++) {
+      opbuf1[i] = x;
+      x++;
+    }
+    ret = fx->AppendBlockToBuffer(opbuf1);
+    std::cout << ret << std::endl;
+    ret = fx->WriteAllBlocks();
+    std::cout << ret << std::endl;
+
+
+    std::cout << "meta magic: " << fx->meta.magic << std::endl;
+    std::cout << "bs:" << fx->meta.blksize << std::endl;
+    std::cout << "bc:" << fx->meta.blkcount << std::endl;
+
+    delete fx;    
+    Quark::QuarkAppendFile::deinitialize();
+}
 };
 }
 
-TEST(QAF, metablock1) { Quark::QAF_Test_Obj::tst_QFMetaBlock_mem_init(); }
-TEST(QAF, metablock2) { Quark::QAF_Test_Obj::tst_QFMetaBlock_IO(); }
+//TEST(QAF, metablock1) { Quark::QAF_Test_Obj::tst_QFMetaBlock_mem_init(); }
+//TEST(QAF, metablock2) { Quark::QAF_Test_Obj::tst_QFMetaBlock_IO(); }
+//TEST(QAF, metablock3) { Quark::QAF_Test_Obj::tst_QAF_01(); }
+TEST(QAFExternal, fileoperation) {
+    Quark::QAF_Test_Obj::tst_File_01();
+}
+
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

@@ -31,7 +31,7 @@ namespace Quark {
 
 typedef uint8_t uchar_t;
 
-const size_t QEBlockSize = 512;
+const size_t QEBlockSize = 128;
 const size_t QEKeySize = 32;
 const uchar_t *QEKeys = (uchar_t *)"879b976f9e1d328865559a771b982120";
 
@@ -39,10 +39,11 @@ enum {
   rOK = 0,
   rEOF,
   rERR,
-  rENVAL
+  rENVAL,
+  rEMEM
 };
 
-class BlockArena;
+class PageArena;
 class QuarkAppendFile;
 class QAF_Test_Obj;
 
@@ -53,7 +54,7 @@ class BlockBase {};
  * */
 template <typename UNIT = uchar_t, const size_t SZ = QEBlockSize>
 class Block : public BlockBase {
-  friend class BlockArena;
+  friend class PageArena;
   friend class QuarkAppendFile;
   friend class QAF_Test_Obj;
 
@@ -156,7 +157,7 @@ int Block<UNIT, SZ>::Block2File(FILE *fp, Block *b) {
 // zero-copy block
 template <>
 class Block<void, 1> : public BlockBase {
-  friend class BlockArena;
+  friend class PageArena;
   friend class QuarkAppendFile;
 
  public:
@@ -219,12 +220,14 @@ int Block<void, 1>::Block2File(FILE *fp, Block *b) {
   return ret;
 }
 
-class BlockArena {
+class PageArena {
  public:
+   void *Alloc(size_t bs) { }
 };
 
 typedef Block<void, 1> ByteBlock;
 typedef std::vector<ByteBlock *> ByteBlockArray;
+typedef std::vector<void *> PageArray;
 
 const size_t QAF_BS = QEBlockSize;
 const char *QAF_Magic =
@@ -232,6 +235,8 @@ const char *QAF_Magic =
                                                  // md5sum`
 const int QAF_Footer_Size = 64;                  // bytes
 const char *QAF_Mode_Strs[] = {"w", "r+", "a"};
+
+PageArena *QAF_page_arena;
 
 /*
  * a QuarkFile ---> PlainFile
@@ -248,23 +253,50 @@ class QuarkAppendFile {
   static QuarkAppendFile *ImportFromPlainFile(const char *, int rw);
   static QuarkAppendFile *ImportFromPlainString(const char *dst,
                                                 const char *src, int rw);
+  static int initialize();
+  static int deinitialize();
 
+ private:
+  ByteBlock* alloc_append_block();
+  ByteBlock* alloc_append_block(void *memptr);
+
+ public:
   QuarkAppendFile(const char *fname_)
       : fname(fname_), fp(NULL), meta(QAF_BS, 0, QAF_Magic) {}
   ~QuarkAppendFile() {
     if (fp) {
       fclose(fp);
     }
+    for (ByteBlockArray::iterator itr = blk_memtable.begin();
+        itr != blk_memtable.end(); ++itr) {
+        delete *itr;
+    }
   }
 
-  int ReadBlock();
-  int AppendBlock();
+  /*
+   *       
+   *     
+   *  raw ------> buffer ------> file
+   *
+   *
+   *  raw <------ buffer <------ file
+   *
+   * */
+  void *AllocBlockBuffer();
+  size_t GetBlockBufferSize() { return meta.blksize; }
+
+  int AppendBlockToBuffer(void* memptr);
+  int WriteAllBlocks();
+  
+  int BufferToRawString();
+  int ReadAllBlocks();
+  
   FILE *GetFP() { return fp; }
 
  private:
   static QuarkAppendFile *alloc(const char *, int);
   QuarkAppendFile *chmod(int mode);
-  QuarkAppendFile *check();
+  QuarkAppendFile *check(bool);
 
   enum ModeBit {
     CREAT = 0,  //
@@ -272,22 +304,31 @@ class QuarkAppendFile {
     APP         //
   };
   static const char **fpmodes;
+
+#define BSBLKSIZE sizeof(uint32_t)
+#define BCBLKSIZE sizeof(uint64_t)
+#define MGBLKSIZE  \
+  (QAF_Footer_Size - BSBLKSIZE - BCBLKSIZE)
   struct QFMetaBlock {  // QuarkFile Metadata Block
     typedef Block<uint32_t, 1> BSBLK;
     typedef Block<uint64_t, 1> BCBLK;
-    typedef Block<char, QAF_Footer_Size - sizeof(uint32_t) - sizeof(uint64_t)>
+    typedef Block<char, MGBLKSIZE>
         MGBLK;
 
-    Block<uint32_t, 1> blksize;
-    Block<uint64_t, 1> blkcount;
-    Block<char, QAF_Footer_Size - sizeof(uint32_t) - sizeof(uint64_t)> magic;
+    uint32_t blksize;
+    uint64_t blkcount;
+    char magic[MGBLKSIZE];
 
-    QFMetaBlock(size_t bs, size_t bc, const char *m) {
-      blksize.SetCtn0(bs);
-      blkcount.SetCtn0(bc);
-      magic.SetCtn(m, strlen(m));
+    /*
+    BSBLK blksize;
+    BCBLK blkcount;
+    MGBLK magic;
+    */
 
-      magic.SetVlSZ(QAF_Footer_Size - sizeof(uint32_t) - sizeof(uint64_t));
+    QFMetaBlock(size_t bs, size_t bc, const char *m) :
+      blksize(bs), blkcount(bc)
+      {
+        strncpy(magic, m, MGBLKSIZE);
     }
     ~QFMetaBlock() {}
 
@@ -303,6 +344,7 @@ class QuarkAppendFile {
   std::string fname;
   int mode;
 
+  static PageArray* page_arena_gptr;
   ByteBlockArray blk_memtable;
 };
 
