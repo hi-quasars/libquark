@@ -223,6 +223,11 @@ class QAF_Test_Obj {
   
 
   }
+
+  static void tst_encryto_01() {
+    Quark::QEncryption qc;
+    std::cout << qc.xkeys << std::endl;
+  }
 };
 }
 
@@ -230,6 +235,8 @@ TEST(QAF, metablock1) { Quark::QAF_Test_Obj::tst_QFMetaBlock_mem_init(); }
 TEST(QAF, metablock2) { Quark::QAF_Test_Obj::tst_QFMetaBlock_IO(); }
 TEST(QAF, metablock3) { Quark::QAF_Test_Obj::tst_QAF_01(); }
 TEST(QAFExternal, fileoperation) { Quark::QAF_Test_Obj::tst_File_01(); }
+
+TEST(Encrypto, init) { Quark::QAF_Test_Obj::tst_encryto_01(); }
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

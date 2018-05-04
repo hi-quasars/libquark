@@ -244,4 +244,17 @@ QuarkAppendFile* ImportFromPlainFile(const char*, int rw) {}
 QuarkAppendFile* ImportFromPlainString(const char* dst, const char* src,
                                        int rw) {}
 
+const char* Cstr[CSTRSIZE] = {
+    "QEncr-92817", "01a9cc7609", "f4d394d5", "e12a3d339"
+};
+const char** QEncryption::key = Cstr;
+
+int QEncryption::EncryptAndPut(const std::string &src, std::string &dst) {
+
+}
+
+int QEncryption::DecryptAndGet(const std::string &src, std::string &dst) {
+
+}
+
 }  // namespace Quark
