@@ -27,9 +27,14 @@ libqe.so: cryptopp
 
 test: libqe.so gtest
 	$(CC) $(tSRCs) -o $@ -lqe -L. $(Iflag01) $(Iflag02) $(LDflag02)
-
-gtest: 
+gtest:
 	@echo "---------make libgtest--------" 
+	$(MAKE) -C $(gtest_dir)
+
+
+gtest-force-rebuild: 
+	@echo "---------make libgtest--------" 
+	cd $(gtest_dir)/..; rm -rf build; mkdir build; cd build; cmake ..;
 	$(MAKE) -C $(gtest_dir)
 
 cryptopp:

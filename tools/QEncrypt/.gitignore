@@ -1,5 +1,8 @@
+
+!/tools/QEncrypt/3rdparty/
 tags
 *.txt
 test
 *.so
 *.taghl
+
