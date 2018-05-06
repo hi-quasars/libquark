@@ -26,7 +26,7 @@ libqe.so: cryptopp
 	$(CC) $(libSRCs) -shared -fPIC -o $@ $(Iflag01) $(Iflag03) $(LDflag03)
 
 test: libqe.so gtest
-	$(CC) $(tSRCs) -o $@ -lqe -L. $(Iflag01) $(Iflag02) $(LDflag02)
+	$(CC) $(tSRCs) -o $@ -lqe -L. $(Iflag01) $(Iflag02) $(LDflag02) $(Iflag03) $(LDflag03)
 gtest:
 	@echo "---------make libgtest--------" 
 	$(MAKE) -C $(gtest_dir)
@@ -40,6 +40,8 @@ gtest-force-rebuild:
 cryptopp:
 	@echo "---------make libcryptopp-----"
 	$(MAKE) -C $(cryptopp_dir)
+cryptopp_test:
+	$(CC) enc_test.cc -o ctest $(Iflag03) $(LDflag03)
 
 clean:
 	rm -f test
