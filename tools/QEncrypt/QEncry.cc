@@ -57,6 +57,10 @@ void* QuarkAppendFile::AllocBlockBuffer() {
     return memptr;
 }
 
+void* QuarkAppendFile::AllocLargeBuffer() {
+
+}
+
 int QuarkAppendFile::AppendBlockToBuffer(void* memptr) {
     ByteBlock* b = alloc_append_block(memptr);  //...
     if (b) {
@@ -113,14 +117,36 @@ QuarkAppendFile* QuarkAppendFile::NewNonEmptyReadFile(const char* f, bool chk) {
         delete qaf;
         return NULL;
     }
+    //check ok
+
+
     return qaf;
 }
 
 QuarkAppendFile* QuarkAppendFile::NewNonEmptyAppendFile(const char* f) {
     QuarkAppendFile* qaf = alloc(f, RW);
-    if (qaf && qaf->check(true) && qaf->chmod(APP)) {
-        return qaf;
+    if (!qaf) {
+        std::cerr << "alloc failed" << std::endl;
+        goto ERR;
     }
+    
+    if (!qaf->check(true)) {
+        std::cerr << "check failed" << std::endl;
+        goto ERR;
+    }
+    /*
+    if (!qaf->chmod(APP)) {
+        std::cerr << "chmod failed" << std::endl;
+        goto ERR;
+    }
+    */
+    if(0 != qaf->meta.SetOFSToLastBlock(qaf->fp)) {
+        std::cerr << "Set OFS failed" << std::endl;
+        goto ERR;
+    }
+
+    return qaf;
+ERR:
     delete qaf;
     return NULL;
 }
@@ -192,6 +218,17 @@ ERR:
     return rERR;
 }
 
+int QuarkAppendFile::QFMetaBlock::SetOFSToLastBlock(FILE *fp1) {
+    long int ofs = blkcount * blksize;
+    int ret = fseek(fp1, ofs, SEEK_SET);
+    if(ret != 0) {
+        std::cerr << "fseek failed:" << ret << std::endl;
+    }
+    std::cout << "fseek ret:" << ret << std::endl;
+
+    return ret;
+}
+
 QuarkAppendFile::QFMetaBlock* QuarkAppendFile::QFMetaBlock::ReadFromFile(
     FILE* fp1) {
     int ret;
@@ -207,10 +244,14 @@ QuarkAppendFile::QFMetaBlock* QuarkAppendFile::QFMetaBlock::ReadFromFile(
         // std::cout << "ft1:" << ft_now << std::endl;
         goto ERR;
     }
-    fseek(fp1, 0, SEEK_END);
+    ret = fseek(fp1, 0, SEEK_END);
     // std::cout << "ft2:" << ftell(fp1) << std::endl;
     ft_footer = ftell(fp1) - QAF_Footer_Size;
-    fseek(fp1, ft_footer, SEEK_SET);
+    ret = fseek(fp1, ft_footer, SEEK_SET);
+    if ( ret != 0) {
+        std::cerr << "fseek failed:" << ret << std::endl;
+        goto ERR;
+    }
     // std::cout << "ft3:" << ftell(fp1) << std::endl;
 
     ret = BSBLK::File2Block(fp1, &b1);
@@ -238,9 +279,25 @@ ERR:
     return NULL;
 }
 
-QuarkAppendFile* ImportFromPlainFile(const char*, int rw) {}
+int QuarkAppendFile::SWrite(const char* src, int len) {
 
-QuarkAppendFile* ImportFromPlainString(const char* dst, const char* src,
+} 
+
+int QuarkAppendFile::SWriteEnc(const char* src, int len) {
+
+}
+
+int QuarkAppendFile::SRead(char** dst, int *len){
+
+}
+
+int QuarkAppendFile::SReadDec(char** dst, int *len){
+
+}
+
+QuarkAppendFile* QuarkAppendFile::ImportFromPlainFile(const char*, int rw) {}
+
+QuarkAppendFile* QuarkAppendFile::ImportFromPlainString(const char* dst, const char* src,
                                        int rw) {}
 
 const char* Cstr[CSTRSIZE] = {"QEncr-92817", "01a9cc7609", "f4d394d5", "e12a3d339"};

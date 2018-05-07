@@ -226,6 +226,82 @@ class QAF_Test_Obj {
         Quark::QuarkAppendFile::deinitialize();
     }
 
+    static void tst_File_02() {
+        int ret;
+        char *bufx;
+        std::string str1 = dirname + "file_02" + suffix;
+        Quark::QuarkAppendFile::initialize();
+        Quark::QuarkAppendFile *fx =
+            Quark::QuarkAppendFile::NewEmptyAppendFile(str1.c_str());
+        char *opbuf1 = (char *)fx->AllocBlockBuffer();
+        size_t sz = fx->GetBlockBufferSize();
+        char x = 'A';
+        for (size_t i = 0; i < sz && i < 10; i++) {
+            opbuf1[i] = x;
+            x++;
+        }
+        std::cout << "write1:" << opbuf1 << std::endl;        
+        ret = fx->AppendBlockToBuffer(opbuf1);
+        std::cout << "----------- Write ------------" << std::endl;
+        std::cout << "Write(buffer):" << ret << std::endl;
+        ret = fx->WriteAllBlocks();
+        std::cout << "WriteFile:" << ret << std::endl;
+
+        std::cout << "meta magic: " << fx->meta.magic << std::endl;
+        std::cout << "bs:" << fx->meta.blksize << std::endl;
+        std::cout << "bc:" << fx->meta.blkcount << std::endl;
+
+        delete fx;
+        
+        std::cout << "----------- Write 2 ------------" << std::endl;
+        Quark::QuarkAppendFile *fxx = Quark::QuarkAppendFile::NewNonEmptyAppendFile(str1.c_str());
+
+        EXPECT_NE(fxx, (void *)NULL);
+        std::cout << "meta magic: " << fxx->meta.magic << std::endl;
+        std::cout << "bs:" << fxx->meta.blksize << std::endl;       
+        std::cout << "bc:" << fxx->meta.blkcount << std::endl;      
+
+
+        char *opbuf22 = (char *)fxx->AllocBlockBuffer();
+        x = 'Y';
+        for (size_t i = 0; i < sz && i < 10; i++) {
+                opbuf22[i] = x;                         
+                x++;                                   
+        }
+        std::cout << "write2:" << opbuf22 << std::endl;        
+        ret = fxx->AppendBlockToBuffer(opbuf22);
+        std::cout << "Write(buffer):" << ret << std::endl;
+        ret = fxx->WriteAllBlocks();
+        std::cout << "WriteFile:" << ret << std::endl;
+        delete fxx;
+        
+
+        std::cout << "----------- Read ------------" << std::endl;
+        Quark::QuarkAppendFile *fx_read =
+            Quark::QuarkAppendFile::NewNonEmptyReadFile(str1.c_str(), true);
+
+        EXPECT_NE(fx_read, (void *)NULL);
+
+        std::cout << "meta magic: " << fx_read->meta.magic << std::endl;
+        std::cout << "bs:" << fx_read->meta.blksize << std::endl;
+        std::cout << "bc:" << fx_read->meta.blkcount << std::endl;
+
+        ret = fx_read->ReadAllBlocks();
+        std::cout << "read result:" << ret << std::endl;
+        size_t ix = 0;
+        for (ByteBlockArray::iterator itr = fx_read->blk_memtable.begin();
+             itr != fx_read->blk_memtable.end(); ++itr, ++ix) {
+            bufx = (char *)(*itr)->GetCtn();
+            std::cout << ix << ":" << bufx << std::endl;
+        }
+
+        delete fx_read;
+
+
+
+        Quark::QuarkAppendFile::deinitialize();
+    }
+
     static void tst_encryto_01() {
         Quark::QEncryption qc;
         std::cout << qc.xkeys << std::endl;
@@ -303,7 +379,7 @@ TEST(QAF, metablock1) { Quark::QAF_Test_Obj::tst_QFMetaBlock_mem_init(); }
 TEST(QAF, metablock2) { Quark::QAF_Test_Obj::tst_QFMetaBlock_IO(); }
 TEST(QAF, metablock3) { Quark::QAF_Test_Obj::tst_QAF_01(); }
 TEST(QAFExternal, fileoperation) { Quark::QAF_Test_Obj::tst_File_01(); }
-
+TEST(QAFExternal, fileoperation_append) { Quark::QAF_Test_Obj::tst_File_02(); }
 TEST(Encrypto, init) { Quark::QAF_Test_Obj::tst_encryto_01(); }
 
 TEST(Encrypto, enc_dec) { Quark::QAF_Test_Obj::tst_encryto_02(); }

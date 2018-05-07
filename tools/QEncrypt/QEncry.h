@@ -285,17 +285,13 @@ class QuarkAppendFile {
      *  raw <------ buffer <------ file
      *
      * */
-    struct SsHandler {
-        const char** strarr;
-        int sz_sa;
-        int m_sz_sa_str;
-    };
-    int SWrite(const char* src);            //string --> chunk --> write in block --> file
-    int SWriteEnc(const char* src);         //string --> chunk --> write in block --> file
-    int SRead(char** dst, int *len);        // file --> block --> strings
+    int SWrite(const char* src, int len);       //string --> chunk --> write in block --> file
+    int SWriteEnc(const char* src, int len);         
+    int SRead(char** dst, int *len);            // file --> block --> strings
     int SReadDec(char** dst, int *len);     
 
     void *AllocBlockBuffer();
+    void *AllocLargeBuffer();
     size_t GetBlockBufferSize() { return meta.blksize; }
 
     int AppendBlockToBuffer(void *memptr);
@@ -346,8 +342,9 @@ class QuarkAppendFile {
          * | Block0 | Block1 | ... | Blockn | Footer |
          */
         int WriteToFile(FILE *fp1);
+        int SetOFSToLastBlock(FILE *fp1);
         struct QFMetaBlock *ReadFromFile(FILE *fp1);
-
+        
     } meta;
 
     FILE *fp;
