@@ -250,8 +250,16 @@ int QEncryption::EncryptAndPut(std::string& dst, const std::string& src) {
     return enc_dec<CryptoPP::ChaCha20::Encryption>(dst, src, &enc);
 }
 
+int QEncryption::EncryptAndPut(char* dst, const char *src, int len) {
+    return enc_dec<CryptoPP::ChaCha20::Encryption>(dst, src, len, &enc);
+}
+
 int QEncryption::DecryptAndGet(std::string& dst, const std::string& src) {
     return enc_dec<CryptoPP::ChaCha20::Decryption>(dst, src, &dec);
+}
+
+int QEncryption::DecryptAndGet(char* dst, const char *src, int len) {
+    return enc_dec<CryptoPP::ChaCha20::Decryption>(dst, src, len, &dec);
 }
 
 }  // namespace Quark

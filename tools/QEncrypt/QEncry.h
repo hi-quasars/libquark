@@ -285,6 +285,16 @@ class QuarkAppendFile {
      *  raw <------ buffer <------ file
      *
      * */
+    struct SsHandler {
+        const char** strarr;
+        int sz_sa;
+        int m_sz_sa_str;
+    };
+    int SWrite(const char* src);            //string --> chunk --> write in block --> file
+    int SWriteEnc(const char* src);         //string --> chunk --> write in block --> file
+    int SRead(char** dst, int *len);        // file --> block --> strings
+    int SReadDec(char** dst, int *len);     
+
     void *AllocBlockBuffer();
     size_t GetBlockBufferSize() { return meta.blksize; }
 
@@ -364,6 +374,12 @@ int enc_dec(std::string &dst, const std::string &src, EDType *obj) {
     return 0;
 }
 
+template <class EDType>
+int enc_dec(char* dst, const char* src, int len, EDType *obj) {
+    obj->ProcessData((uchar_t *)dst, (const uchar_t *)src, len);
+    return 0;
+}
+
 class QEncryption {
    public:
     friend class QAF_Test_Obj;
@@ -402,7 +418,9 @@ class QEncryption {
     }
     ~QEncryption() {}
     int EncryptAndPut(std::string &dst, const std::string &src);
+    int EncryptAndPut(char* dst, const char *src, int len);
     int DecryptAndGet(std::string &dst, const std::string &src);
+    int DecryptAndGet(char* dst, const char *src, int len);
 
    private:
     CryptoPP::ChaCha20::Encryption enc;

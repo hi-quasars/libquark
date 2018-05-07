@@ -263,6 +263,25 @@ class QAF_Test_Obj {
         std::cout << "-b:" << std::endl;
         outputstr_by_int(dec_text);
     }
+    
+    static void tst_encryto_03() {
+        Quark::QEncryption qc;
+        char test_str[128] = "abc*&^%%dddddhahahah!!!";
+        char enc_str[128], dec_str[128];
+        
+        std::cout << "-------------org-----------------" << std::endl;
+        std::cout << test_str << std::endl;
+        
+        std::cout << "-------------Enc-----------------" << std::endl;
+        qc.EncryptAndPut(enc_str, test_str, 128);
+        std::cout << enc_str << std::endl;
+        
+        
+        std::cout << "-------------Dec-----------------" << std::endl;
+        qc.DecryptAndGet(dec_str, enc_str, 128);
+        std::cout << dec_str << std::endl;
+    }
+
 
     static void outputstr_by_int(const std::string &str) {
         for (size_t i = 0; i < str.size(); ++i) {
@@ -276,6 +295,7 @@ class QAF_Test_Obj {
         }
         std::cout << std::endl;
     }
+
 };
 }  // namespace Quark
 
@@ -287,6 +307,7 @@ TEST(QAFExternal, fileoperation) { Quark::QAF_Test_Obj::tst_File_01(); }
 TEST(Encrypto, init) { Quark::QAF_Test_Obj::tst_encryto_01(); }
 
 TEST(Encrypto, enc_dec) { Quark::QAF_Test_Obj::tst_encryto_02(); }
+TEST(Encrypto, enc_dec2) { Quark::QAF_Test_Obj::tst_encryto_03(); }
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
