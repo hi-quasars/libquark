@@ -13,7 +13,7 @@
 namespace Quark {
 
 const char** QuarkAppendFile::fpmodes = QAF_Mode_Strs;
-PageArray* QuarkAppendFile::page_arena_gptr;
+PageArray* QuarkAppendFile::page_arena_gptr = NULL;
 
 int QuarkAppendFile::initialize() { page_arena_gptr = new PageArray; }
 int QuarkAppendFile::deinitialize() {
@@ -70,6 +70,16 @@ int QuarkAppendFile::AppendBlockToBuffer(void* memptr) {
     return rEMEM;
 }
 
+int QuarkAppendFile::AppendBlockToBufferEnc(void* memptr) {
+    EncBlock(memptr);
+    ByteBlock* b = alloc_append_block(memptr);  //...
+    if (b) {
+        meta.blkcount++;
+        return rOK;
+    }
+    return rEMEM;
+}
+
 int QuarkAppendFile::WriteAllBlocks() {
     int ret;
     for (ByteBlockArray::iterator itr = blk_memtable.begin();
@@ -82,6 +92,28 @@ int QuarkAppendFile::WriteAllBlocks() {
 
     ret = meta.WriteToFile(fp);
 
+    return ret;
+}
+
+int QuarkAppendFile::ReadAllBlocksDec() {
+    int ret = rOK;
+    if (!fp) {
+        ret = rENVAL;
+        goto OUT;
+    }
+    for (uint64_t i = 0; i < meta.blkcount; i++) {
+        ByteBlock* bptr = alloc_append_block();
+        if (!bptr) {
+            ret = rEMEM;
+            goto OUT;
+        }
+        ret = ByteBlock::File2Block(fp, bptr);
+        if (ret != rOK) {
+            goto OUT;
+        }
+        DecBlock(bptr->GetCtn());
+    }
+OUT:
     return ret;
 }
 
@@ -104,6 +136,18 @@ int QuarkAppendFile::ReadAllBlocks() {
     }
 OUT:
     return ret;
+}
+
+int QuarkAppendFile::EncBlock(void *memptr) {
+    qenc->EncryptAndPut((char*)qenc_buf, (const char*)memptr, meta.blksize);
+    memcpy(memptr, qenc_buf, meta.blksize);
+    return 0;
+}
+
+int QuarkAppendFile::DecBlock(void *memptr) {
+    qenc->DecryptAndGet((char*)qenc_buf, (const char*)memptr, meta.blksize);
+    memcpy(memptr, qenc_buf, meta.blksize);
+    return 0;
 }
 
 int QuarkAppendFile::BufferToRawString() { return 0; }
@@ -134,7 +178,7 @@ QuarkAppendFile* QuarkAppendFile::NewNonEmptyAppendFile(const char* f) {
         std::cerr << "check failed" << std::endl;
         goto ERR;
     }
-    /*
+    /* 
     if (!qaf->chmod(APP)) {
         std::cerr << "chmod failed" << std::endl;
         goto ERR;
@@ -278,6 +322,23 @@ ERR:
     delete qb;
     return NULL;
 }
+
+QuarkAppendFile::QuarkAppendFile(const char *fname_)
+        : fname(fname_), fp(NULL), meta(QAF_BS, 0, QAF_Magic) {
+        if(page_arena_gptr) {
+            qenc_buf = AllocBlockBuffer();
+        }
+        qenc = new QEncryption();
+}
+QuarkAppendFile::~QuarkAppendFile() {
+        if (fp) {
+            fclose(fp);
+        }
+        for (ByteBlockArray::iterator itr = blk_memtable.begin();
+             itr != blk_memtable.end(); ++itr) {
+            delete *itr;
+        }
+    }
 
 int QuarkAppendFile::SWrite(const char* src, int len) {
 

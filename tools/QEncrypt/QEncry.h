@@ -241,6 +241,8 @@ const char *QAF_Mode_Strs[] = {"w", "r+", "a"};
 
 PageArena *QAF_page_arena;
 
+class QEncryption;
+
 /*
  * a QuarkFile ---> PlainFile
  *  | Block0 | Block1 | ... | Blockn | Footer |
@@ -264,17 +266,8 @@ class QuarkAppendFile {
     ByteBlock *alloc_append_block(void *memptr);
 
    public:
-    QuarkAppendFile(const char *fname_)
-        : fname(fname_), fp(NULL), meta(QAF_BS, 0, QAF_Magic) {}
-    ~QuarkAppendFile() {
-        if (fp) {
-            fclose(fp);
-        }
-        for (ByteBlockArray::iterator itr = blk_memtable.begin();
-             itr != blk_memtable.end(); ++itr) {
-            delete *itr;
-        }
-    }
+    QuarkAppendFile(const char *fname_);
+    ~QuarkAppendFile();
 
     /*
      *
@@ -295,10 +288,26 @@ class QuarkAppendFile {
     size_t GetBlockBufferSize() { return meta.blksize; }
 
     int AppendBlockToBuffer(void *memptr);
+    int AppendBlockToBufferEnc(void *memptr);
     int WriteAllBlocks();
 
     int BufferToRawString();
     int ReadAllBlocks();
+    int ReadAllBlocksDec();
+    int GetBlockCount() {
+        return meta.blkcount;
+    }
+    const char *GetBlock(int i) {
+        if(i >= 0 && i < blk_memtable.size()) {
+            return (const char *)blk_memtable[i]->GetCtn();
+        } else {
+            std::cerr << "blk index overflow" << std::endl;
+            return NULL;
+        }
+    }
+
+    int EncBlock(void *memptr);
+    int DecBlock(void *memptr);
 
     FILE *GetFP() { return fp; }
 
@@ -350,6 +359,8 @@ class QuarkAppendFile {
     FILE *fp;
     std::string fname;
     int mode;
+    QEncryption *qenc;
+    void *qenc_buf;
 
     static PageArray *page_arena_gptr;
     ByteBlockArray blk_memtable;

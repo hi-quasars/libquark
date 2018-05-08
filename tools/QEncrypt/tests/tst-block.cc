@@ -298,9 +298,43 @@ class QAF_Test_Obj {
         delete fx_read;
 
 
-
         Quark::QuarkAppendFile::deinitialize();
     }
+    
+    static void tst_File_03() {
+        int ret;
+        char *bufx;
+        std::string str1 = dirname + "file_03" + suffix;
+        Quark::QuarkAppendFile::initialize();
+        Quark::QuarkAppendFile* f1 = Quark::QuarkAppendFile::NewEmptyAppendFile(str1.c_str());
+        EXPECT_NE(f1, (void*)NULL);
+        void *ptr1 = f1->AllocBlockBuffer();
+        size_t sz = f1->GetBlockBufferSize();
+        const char *x[]= { 
+            "happy code<,dk, jrsa, fk.",
+            "caffe latte, sandeli,nfff.(*&^$#"
+        };
+        std::cout << "write1: " << x[0] << "l:" << strlen(x[0]) << std::endl;
+        memcpy(ptr1, x[0], strlen(x[0]));
+        std::cout << "write before enc: " << (const char*)ptr1 << std::endl;
+        f1->AppendBlockToBufferEnc(ptr1);
+        std::cout << "write after enc: " << (const char*)ptr1 << std::endl;
+
+        f1->WriteAllBlocks();
+        delete f1;
+        
+        f1 = Quark::QuarkAppendFile::NewNonEmptyReadFile(str1.c_str(), true);
+        f1->ReadAllBlocksDec();
+        int bsz = f1->GetBlockCount();
+        std::cout << "read1: " << std::endl;
+        for(int i = 0; i < bsz; ++i) {
+            std::cout << i << ": " << f1->GetBlock(i) << std::endl;
+        }
+        
+        delete f1;
+        Quark::QuarkAppendFile::deinitialize();
+    }
+
 
     static void tst_encryto_01() {
         Quark::QEncryption qc;
@@ -380,6 +414,8 @@ TEST(QAF, metablock2) { Quark::QAF_Test_Obj::tst_QFMetaBlock_IO(); }
 TEST(QAF, metablock3) { Quark::QAF_Test_Obj::tst_QAF_01(); }
 TEST(QAFExternal, fileoperation) { Quark::QAF_Test_Obj::tst_File_01(); }
 TEST(QAFExternal, fileoperation_append) { Quark::QAF_Test_Obj::tst_File_02(); }
+TEST(QAFExternal, fileoperation_enc_dec) { Quark::QAF_Test_Obj::tst_File_03(); }
+
 TEST(Encrypto, init) { Quark::QAF_Test_Obj::tst_encryto_01(); }
 
 TEST(Encrypto, enc_dec) { Quark::QAF_Test_Obj::tst_encryto_02(); }
