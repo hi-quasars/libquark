@@ -12,6 +12,14 @@
 
 namespace Quark {
 
+const size_t QEBlockSize = 128;
+const size_t QEKeySize = 32;
+const uchar_t *QEKeys = (uchar_t *)"879b976f9e1d328865559a771b982120";
+
+const char *QAF_Magic =
+    "QuarkFS-95fb52146c042eeccb65094f92b306a0";  // output of `echo "quark-fs" |
+
+const char *QAF_Mode_Strs[] = {"w", "r+", "a"};
 const char** QuarkAppendFile::fpmodes = QAF_Mode_Strs;
 PageArray* QuarkAppendFile::page_arena_gptr = NULL;
 

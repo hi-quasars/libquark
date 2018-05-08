@@ -38,9 +38,9 @@ namespace Quark {
 
 typedef unsigned char uchar_t;
 
-const size_t QEBlockSize = 128;
-const size_t QEKeySize = 32;
-const uchar_t *QEKeys = (uchar_t *)"879b976f9e1d328865559a771b982120";
+extern const size_t QEBlockSize;
+extern const size_t QEKeySize;
+extern const uchar_t *QEKeys;
 
 enum { rOK = 0, rEOF, rERR, rENVAL, rEMEM };
 
@@ -165,9 +165,48 @@ class Block<void, 1> : public BlockBase {
     Block(void *ctnptr_, size_t sz_) : ctnptr(ctnptr_), cap(sz_) {}
     ~Block() {}
     void SetVlSZ(size_t sz_) { vl_sz = sz_; }
-    static int File2Block(FILE *, Block *, size_t);
-    static int File2Block(FILE *, Block *);
-    static int Block2File(FILE *, Block *);
+    static int File2Block(FILE *fp, Block *b, size_t sz) {
+        int ret = rENVAL;
+        if (fp && b && sz < b->cap) {
+            size_t rsz = fread(b->ctnptr, 1, sz, fp);
+            if (rsz == sz) {
+                b->vl_sz = sz;
+                ret = rOK;
+            } else if (feof(fp)) {
+                b->vl_sz = sz;
+                ret = rEOF;
+            } else {
+                ret = rERR;
+            }
+        }
+        return ret;
+    }
+    static int File2Block(FILE *fp, Block *b) {
+        int ret = rENVAL;
+        if (fp && b) {
+            size_t rsz = fread(b->ctnptr, 1, b->cap, fp);
+            if (rsz == b->cap) {
+                b->vl_sz = b->cap;
+                ret = rOK;
+            } else if (feof(fp)) {
+                b->vl_sz = rsz;
+                ret = rEOF;
+            } else {
+                ret = rERR;
+            }
+        }
+        return ret;
+    }
+    static int Block2File(FILE *fp, Block *b) {
+        int ret = rERR;
+        if (fp && b) {
+            size_t sz = fwrite(b->ctnptr, 1, b->cap, fp);
+            if (sz == b->cap) {
+                ret = rOK;
+            }
+        }
+        return ret;
+    }
     size_t GetVlSZ() { return vl_sz; }
     size_t GetCap() { return cap; }
     void *GetCtn() { return ctnptr; }
@@ -177,51 +216,6 @@ class Block<void, 1> : public BlockBase {
     size_t cap;
     void *ctnptr;
 };
-
-int Block<void, 1>::File2Block(FILE *fp, Block *b, size_t sz) {
-    int ret = rENVAL;
-    if (fp && b && sz < b->cap) {
-        size_t rsz = fread(b->ctnptr, 1, sz, fp);
-        if (rsz == sz) {
-            b->vl_sz = sz;
-            ret = rOK;
-        } else if (feof(fp)) {
-            b->vl_sz = sz;
-            ret = rEOF;
-        } else {
-            ret = rERR;
-        }
-    }
-    return ret;
-}
-
-int Block<void, 1>::File2Block(FILE *fp, Block *b) {
-    int ret = rENVAL;
-    if (fp && b) {
-        size_t rsz = fread(b->ctnptr, 1, b->cap, fp);
-        if (rsz == b->cap) {
-            b->vl_sz = b->cap;
-            ret = rOK;
-        } else if (feof(fp)) {
-            b->vl_sz = rsz;
-            ret = rEOF;
-        } else {
-            ret = rERR;
-        }
-    }
-    return ret;
-}
-
-int Block<void, 1>::Block2File(FILE *fp, Block *b) {
-    int ret = rERR;
-    if (fp && b) {
-        size_t sz = fwrite(b->ctnptr, 1, b->cap, fp);
-        if (sz == b->cap) {
-            ret = rOK;
-        }
-    }
-    return ret;
-}
 
 class PageArena {
    public:
@@ -233,13 +227,10 @@ typedef std::vector<ByteBlock *> ByteBlockArray;
 typedef std::vector<void *> PageArray;
 
 const size_t QAF_BS = QEBlockSize;
-const char *QAF_Magic =
-    "QuarkFS-95fb52146c042eeccb65094f92b306a0";  // output of `echo "quark-fs" |
-                                                 // md5sum`
 const int QAF_Footer_Size = 64;                  // bytes
-const char *QAF_Mode_Strs[] = {"w", "r+", "a"};
 
-PageArena *QAF_page_arena;
+extern const char *QAF_Magic;
+extern PageArena *QAF_page_arena;
 
 class QEncryption;
 
@@ -278,10 +269,11 @@ class QuarkAppendFile {
      *  raw <------ buffer <------ file
      *
      * */
-    int SWrite(const char* src, int len);       //string --> chunk --> write in block --> file
-    int SWriteEnc(const char* src, int len);         
-    int SRead(char** dst, int *len);            // file --> block --> strings
-    int SReadDec(char** dst, int *len);     
+    int SWrite(const char *src,
+               int len);  // string --> chunk --> write in block --> file
+    int SWriteEnc(const char *src, int len);
+    int SRead(char **dst, int *len);  // file --> block --> strings
+    int SReadDec(char **dst, int *len);
 
     void *AllocBlockBuffer();
     void *AllocLargeBuffer();
@@ -294,11 +286,9 @@ class QuarkAppendFile {
     int BufferToRawString();
     int ReadAllBlocks();
     int ReadAllBlocksDec();
-    int GetBlockCount() {
-        return meta.blkcount;
-    }
+    int GetBlockCount() { return meta.blkcount; }
     const char *GetBlock(int i) {
-        if(i >= 0 && i < blk_memtable.size()) {
+        if (i >= 0 && i < blk_memtable.size()) {
             return (const char *)blk_memtable[i]->GetCtn();
         } else {
             std::cerr << "blk index overflow" << std::endl;
@@ -353,7 +343,7 @@ class QuarkAppendFile {
         int WriteToFile(FILE *fp1);
         int SetOFSToLastBlock(FILE *fp1);
         struct QFMetaBlock *ReadFromFile(FILE *fp1);
-        
+
     } meta;
 
     FILE *fp;
@@ -372,7 +362,7 @@ class QuarkAppendFile {
 
 #define CSTRSIZE 4
 #define XKEYSIZE 32
-#define XIVSIZE  8
+#define XIVSIZE 8
 
 template <class EDType>
 int enc_dec(std::string &dst, const std::string &src, EDType *obj) {
@@ -383,7 +373,7 @@ int enc_dec(std::string &dst, const std::string &src, EDType *obj) {
 }
 
 template <class EDType>
-int enc_dec(char* dst, const char* src, int len, EDType *obj) {
+int enc_dec(char *dst, const char *src, int len, EDType *obj) {
     obj->ProcessData((uchar_t *)dst, (const uchar_t *)src, len);
     return 0;
 }
@@ -405,8 +395,8 @@ class QEncryption {
             }
         }
         xkeys[0] = 'J';
-        
-        for (int i = XKEYSIZE - 1 ;i >= 0 && XKEYSIZE - 1 - i < XIVSIZE; --i) {
+
+        for (int i = XKEYSIZE - 1; i >= 0 && XKEYSIZE - 1 - i < XIVSIZE; --i) {
             xivs[XKEYSIZE - 1 - i] = xkeys[i];
         }
         for (int i = 0; i < XKEYSIZE - 1; i++) {
@@ -415,7 +405,7 @@ class QEncryption {
             }
         }
         for (int i = 0; i < XIVSIZE - 1; i++) {
-            if ( xivs[i] == 0) {
+            if (xivs[i] == 0) {
                 xivs[i] = 'X';
             }
         }
@@ -426,9 +416,9 @@ class QEncryption {
     }
     ~QEncryption() {}
     int EncryptAndPut(std::string &dst, const std::string &src);
-    int EncryptAndPut(char* dst, const char *src, int len);
+    int EncryptAndPut(char *dst, const char *src, int len);
     int DecryptAndGet(std::string &dst, const std::string &src);
-    int DecryptAndGet(char* dst, const char *src, int len);
+    int DecryptAndGet(char *dst, const char *src, int len);
 
    private:
     CryptoPP::ChaCha20::Encryption enc;

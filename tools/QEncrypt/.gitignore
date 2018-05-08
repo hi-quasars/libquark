@@ -3,6 +3,7 @@
 tags
 *.txt
 test
+ctest
 *.so
 *.taghl
 
