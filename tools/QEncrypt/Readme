@@ -1,8 +1,17 @@
- ## About
-  
- this tool is used by me for easy text encryption & decrption which based on `jonasschnelli/chacha20poly1305`(a submodule of this repo)
+ ## About  
+    a simple block-based encryption library.
 
- the code in this folder is just a wrapper-around. 
- core ultilities're impl-ed by `jonasschnelli/chacha20poly1305`.
+## to Run
+    ```
+    make CTEST
 
+    ./ctest/ctest
 
+    write(plain): abcdefghijklmnopqrstuv
+    ret: 0
+    ret: 0
+    write(secured): �L?�q��*q�O����G!s�
+    ret: 0
+    read:
+    i: 0, abcdefghijklmnopqrstuv%  
+    ```
