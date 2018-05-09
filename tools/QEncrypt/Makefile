@@ -13,7 +13,7 @@ Iflag01 :=  -I./
 cryptopp_dir := ./3rdparty/cryptopp/cryptopp-CRYPTOPP_6_0_0
 gtest_dir := ./3rdparty/googletest-release-1.6.0/build/
 cinclude_dir := ./cinclude/
-ctestsrc_dir := ./ctest/
+ctestsrc_dir := ./CTEST/
 
 Iflag02 :=  -I./3rdparty/googletest-release-1.6.0/include/
 
