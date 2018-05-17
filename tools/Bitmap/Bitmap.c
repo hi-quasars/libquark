@@ -1,4 +1,5 @@
 #include <Bitmap.h>
+#include <Bit.h>
 #include <malloc.h>
 #include <string.h>
 
@@ -51,7 +52,7 @@ int alloc_bit(bitmap_t *bm) {
     int ret = -1, i;
     for (i = 0; i < bm->len; i++) {
         if (bm->ctn[i] < MaxValOfType(byte_t)) {
-            
+            find_empty_slot(bm->)
         }
     }
 
