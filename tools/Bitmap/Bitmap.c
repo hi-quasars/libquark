@@ -2,7 +2,18 @@
 #include <Bit.h>
 #include <malloc.h>
 #include <string.h>
+#include <assert.h>
 
+
+// [0, max]
+// -------- byte_t's bit num = 8 ------
+// index    
+// 0-7      i=0, idx = 0-7
+// 8-15     i=1, idx = 0-7
+//  
+// index <--  i * 8 + idx
+// index -->  i = index / 8,  idx = index % 8
+//
 bitmap_t* alloc_bitmap(int max) {
     int bytes = sizeof(byte_t) == 1 ? 
         ((max >> 3) + 1) : ((max / sizeof(byte_t)) + 1);
@@ -48,18 +59,46 @@ int find_empty_slot(byte_t x) {
     return zindex;
 }
 
+int i_idx2index(int i, int idx) {
+    return (i * (sizeof(byte_t) << 3)) + idx;
+}
+
+int index2i(int index) {
+    return (index / sizeof(byte_t));
+}
+//offset inside the byte
+int index2idx(int index) {
+    return (index % sizeof(byte_t));
+}
+
+
 int alloc_bit(bitmap_t *bm) {
-    int ret = -1, i;
+    int i, idx;
+
     for (i = 0; i < bm->len; i++) {
         if (bm->ctn[i] < MaxValOfType(byte_t)) {
-            find_empty_slot(bm->)
+            idx = find_empty_slot(bm->ctn[i]);
+            assert(idx > 0);
+            
+            // idx
+            // Lock ?
+            // Lock-Less ?
+            IndexXSet1(bm->ctn[i], idx);
+            
+            return (i * sizeof(byte_t) + idx);
         }
     }
-
-    return ret;
-FULL:
     return -1;
 }
 
-void release_bit(bitmap_t *bm, int bi) {
+// assume - Not possiable alloc the same bit twice.
+//
+void release_bit(bitmap_t *bm, int index) {
+    int i = index2i(index);
+    int idx = index2idx(index);
+    
+    //Lock ?
+    //Lock-less ?
+    //
+    IndexXSet0(bm->ctn[i], idx);
 }

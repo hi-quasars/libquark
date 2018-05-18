@@ -22,6 +22,13 @@
     __typeof(Var) __tmp = (Var & (Var - 1)); \
     __tmp; \
     })
+#define IndexXSet1(Var, X)  do{ \
+    Var = Var | (1 << X);       \
+} while (0)
+
+#define IndexXSet0(Var, X)  do{ \
+    Var = Var & (~(1 << X));       \
+} while (0)
 
 /*
  * gaudent algorithm, like binary search.
